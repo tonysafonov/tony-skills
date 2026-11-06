@@ -108,11 +108,16 @@ datacenter, a closed-model user with think times, 5-minute holds judged on p95 <
 The experience is from load-testing [gramkit](https://github.com/AHTOOOXA/gramkit) (FastAPI + Vue/React Telegram
 Mini App framework) and a production Mini App built on it. On Arjay's multicore Conduit benchmark, 2 dedicated vCPU:
 
-| | Users held 5 min |
-|---|---:|
-| plain FastAPI reference (`examples/python`) | 3,400 |
-| gramkit as first shipped | 220 |
-| gramkit after a 7-step fix ladder (per-process clients, workers = cores, bounded pool, ASGI middleware, lean DI, quieter logs) | 1,400 |
+| Users held 5 min | first round | re-run on the fixed core, same day as its reference |
+|---|---:|---:|
+| plain FastAPI reference (`examples/python`) | 3,400 | 3,000–3,100 |
+| gramkit as first shipped (1 worker) | 220 | — |
+| gramkit with the fixes, 1 worker (template default) | — | 710 |
+| gramkit with the fixes, 2 workers (one per core) | 1,400 | 1,300 |
+
+The fixes: per-process clients, a bounded DB pool, pure-ASGI middleware, real core dependencies instead of
+`dependency_overrides`, off-loop log writes. Only same-day numbers compare: the unchanged reference drifted ~10 %
+between the two days, so gramkit's share is the stable figure (41 % → 42–43 % of the reference).
 
 On the production stand the realistic journey found what a synthetic benchmark never would: per-request connections
 overwhelming Docker's DNS until auth failures logged users out (401), a burst of app opens OOM-killing the container,
