@@ -7,6 +7,7 @@ reads `SKILL.md`).
 |---|---|
 | [`pishi/`](pishi/) | Russian prose for a human reader — messages to a CTO, ops instructions, tickets, PR bodies, explanations, cover letters, how-tos for parents. Infostyle method + Russian AI-tell removal + your own house rules, with a zero-dependency linter that scores a draft 0–100. |
 | [`motion-video/`](motion-video/) | Motion-design videos as code — app showcases, launch films, rebrand reveals, vertical ads. HTML composition with `__seek(t)`, rendered frame by frame (Playwright + ffmpeg) with linear-light motion blur and correct BT.709 encoding; real-UI capture on a slowed page clock; a sound mixer from recorded SFX verified by measurement; contact sheets, automated checks and a critic loop. |
+| [`perf-lab/`](perf-lab/) | Load-test, profile and optimize a web backend on two rented VPS boxes, Arjay-McCandless-style ("how many users can this server hold"): calibrate against a published reference, a realistic closed-model k6 journey from your analytics, staircase + 5-minute holds, CPU price per endpoint, py-spy at saturation, a fix ladder A/B'd by commit, a chaos test, and an honest report. |
 
 ## pishi — «Пиши, сокращай» для агента
 
@@ -94,3 +95,57 @@ uv run --with librosa python motion-video/scripts/beats.py track.mp3 --len 15
 Personal taste rules (short!) go in `~/.claude/motion-video/house-rules.md` — see `house-rules.example.md`.
 Built from claude-motion-design, onetake (ideas only — it is non-commercial), brag, HyperFrames,
 ClaudeAnimationBase and a lot of rejected renders; sources in `motion-video/references/tools.md`.
+
+## perf-lab — how many users does your backend hold?
+
+A performance lab in a skill: rent two boxes in one datacenter, calibrate the rig against a published reference
+implementation, model a real user from your analytics, find the number of users the backend holds for five minutes,
+find out why it isn't more, fix it one step at a time, and write it up so a stranger can check it.
+
+The method is Arjay McCandless's — his YouTube "how many users can a $12 server hold" challenges and their
+leaderboards ([github.com/arjaythedev](https://github.com/arjaythedev)): a target box and a load generator in one
+datacenter, a closed-model user with think times, 5-minute holds judged on p95 < 500 ms, p99 < 1 s, < 1 % errors.
+The experience is from load-testing [gramkit](https://github.com/AHTOOOXA/gramkit) (FastAPI + Vue/React Telegram
+Mini App framework) and a production Mini App built on it. On Arjay's multicore Conduit benchmark, 2 dedicated vCPU:
+
+| | Users held 5 min |
+|---|---:|
+| plain FastAPI reference (`examples/python`) | 3,400 |
+| gramkit as first shipped | 220 |
+| gramkit after a 7-step fix ladder (per-process clients, workers = cores, bounded pool, ASGI middleware, lean DI, quieter logs) | 1,400 |
+
+On the production stand the realistic journey found what a synthetic benchmark never would: per-request connections
+overwhelming Docker's DNS until auth failures logged users out (401), a burst of app opens OOM-killing the container,
+DB transactions held open through 20-second LLM streams, aiohttp's 100-connection default — and a probe that measured
+fast 401s for hours because k6's `__ENV` includes the OS environment. All of it is in `references/pitfalls.md`.
+
+**Runtime:** `SKILL.md` (the procedure, ≈ 125 lines) + `references/` loaded on demand (rig and provider recipe,
+calibration, journey, load, profiling, fixes, pitfalls, reporting). Scripts are executed, not read:
+
+```bash
+S=~/tony-skills/perf-lab
+cp -r $S/scripts/k6 perf/k6 && cp $S/templates/journey.js perf/k6/journey.js   # write your user here
+export TARGET=root@<target> LOADER=root@<loader> CONTAINER=<app container> BASE_URL=http://<target>:8000
+$S/scripts/preflight.sh                                   # RTT, steal, disk, ports open past ufw, tools
+$S/scripts/load.sh staircase asis -e START=30 -e STEP=30   # estimate
+$S/scripts/load.sh hold asis 300                           # verdict: 5-minute hold
+$S/scripts/cpuprobe.sh endpointprobe.js 6 me -e EP='GET /users/me'   # ms CPU per request (refuses non-2xx)
+$S/scripts/pyspy.sh out/me.txt endpointprobe.js 6 -e EP='GET /users/me' && python3 $S/scripts/stacks.py top out/me.txt
+DEP=<db container> $S/scripts/chaos.sh before              # DB down 6 s under load: 503 good, 401 bad
+DEPLOY_CMD=... $S/scripts/ab.sh out/x base:<sha> new:<sha> # same procedure per variant, one table
+```
+
+Needs ssh keys to both boxes, Docker + py-spy on the target, k6 on the loader, python3 locally. No hosts or keys in
+the scripts; ordering servers is always the owner's call. Personal rules go in `~/.claude/perf-lab/house-rules.md`
+(see `house-rules.example.md`).
+
+Install like the others:
+
+```bash
+ln -s ~/tony-skills/perf-lab ~/.claude/skills/perf-lab
+mkdir -p ~/.claude/perf-lab && cp ~/tony-skills/perf-lab/house-rules.example.md ~/.claude/perf-lab/house-rules.md
+```
+
+Credits: Arjay McCandless — the challenges, the scoring, and `realistic-load-test` (MIT), from which `lib.js`,
+`hold.js` and `staircase.js` are adapted (his licence is next to them in `scripts/k6/`). [k6](https://k6.io),
+[py-spy](https://github.com/benfred/py-spy). The boxes were from Synteq (Arjay's sponsor); any provider works.
