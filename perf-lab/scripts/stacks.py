@@ -7,7 +7,7 @@
     python3 stacks.py diff     a.txt b.txt [--min 1]          # inclusive shares side by side (A/B of one endpoint)
 
 Shares are of the in-request samples (stacks that contain the request entry frame, default `run_asgi`; change it
-with --entry, e.g. `handle` for other servers) unless --all. Inclusive = the frame appears anywhere in the stack,
+with --entry, e.g. `handle` for other servers; global options go first: `stacks.py --entry handle top f.txt`) unless --all. Inclusive = the frame appears anywhere in the stack,
 counted once per sample: that is the number to quote ("28.8 % of a request is in get_dependant").
 
 Read shares only from a profile taken at saturation: below it, the event loop's idle wait (uvloop's C `run`, or

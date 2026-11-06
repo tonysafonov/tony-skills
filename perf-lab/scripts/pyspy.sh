@@ -14,6 +14,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/env.sh"
+sync_k6
 out=${1:?output file}; script=${2:?k6 script}; vus=${3:?VUs}; shift 3
 extra=""; [ $# -gt 0 ] && extra=$(printf "%q " "$@")
 PYSPY=${PYSPY:-py-spy}; DUR=${DURATION:-30}; RATE=${RATE:-200}
@@ -21,7 +22,7 @@ mkdir -p "$(dirname "$out")"
 
 reset_stand
 restart_app
-lssh "cd '$K6_DIR' && k6 run -q -e BASE_URL='$BASE_URL' -e VUS=$vus -e DURATION=$((DUR + 35))s $extra '$script' >/dev/null 2>&1" &
+lssh "cd '$K6_DIR' && k6 run -q -e BASE_URL='$BASE_URL' -e HEALTH='$HEALTH' -e VUS=$vus -e DURATION=$((DUR + 35))s $extra '$script' >/dev/null 2>&1" &
 sleep 15
 # docker top lists host PIDs; sort by %CPU so a multi-worker server gives a worker, not the idle supervisor.
 # (Not `pgrep -f` over ssh: it matches the ssh command line that contains the pattern.)

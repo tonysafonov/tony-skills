@@ -11,6 +11,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/env.sh"
+sync_k6
 script=${1:?k6 script}; vus=${2:?VUs}; label=${3:?label}; shift 3
 extra=""; [ $# -gt 0 ] && extra=$(printf "%q " "$@")
 
@@ -19,7 +20,7 @@ restart_app
 cpu_log=$(mktemp); sum=$(mktemp)
 trap 'rm -f "$cpu_log" "$sum"' EXIT
 sample_cpu 20 10 > "$cpu_log" &
-lssh "cd '$K6_DIR' && rm -f /tmp/perflab-cpuprobe.json && k6 run -q --summary-export /tmp/perflab-cpuprobe.json -e BASE_URL='$BASE_URL' -e VUS=$vus -e DURATION=75s $extra '$script' >/dev/null 2>&1; cat /tmp/perflab-cpuprobe.json" > "$sum" || true
+lssh "cd '$K6_DIR' && rm -f /tmp/perflab-cpuprobe.json && k6 run -q --summary-export /tmp/perflab-cpuprobe.json -e BASE_URL='$BASE_URL' -e HEALTH='$HEALTH' -e VUS=$vus -e DURATION=75s $extra '$script' >/dev/null 2>&1; cat /tmp/perflab-cpuprobe.json" > "$sum" || true
 wait
 
 python3 - "$cpu_log" "$sum" "$label" <<'PY'

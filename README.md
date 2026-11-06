@@ -124,7 +124,8 @@ calibration, journey, load, profiling, fixes, pitfalls, reporting). Scripts are 
 
 ```bash
 S=~/tony-skills/perf-lab
-cp -r $S/scripts/k6 perf/k6 && cp $S/templates/journey.js perf/k6/journey.js   # write your user here
+mkdir -p perf && cp -r $S/scripts/k6 perf/k6 && cp $S/templates/journey.js perf/k6/journey.js   # write your user here
+BOT_TOKEN=<test bot token> python3 -I $S/scripts/tg_initdata.py 3000 > perf/k6/data/users.json   # or a JSON array of tokens your app accepts
 export TARGET=root@<target> LOADER=root@<loader> CONTAINER=<app container> BASE_URL=http://<target>:8000
 $S/scripts/preflight.sh                                   # RTT, steal, disk, ports open past ufw, tools
 $S/scripts/load.sh staircase asis -e START=30 -e STEP=30   # estimate

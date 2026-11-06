@@ -27,7 +27,7 @@ from aiohttp import web
 TTFT = (float(os.getenv("STUB_TTFT_MIN", "1.0")), float(os.getenv("STUB_TTFT_MAX", "2.0")))
 TPS = float(os.getenv("STUB_TPS", "40"))
 TOKENS = (int(os.getenv("STUB_TOKENS_MIN", "600")), int(os.getenv("STUB_TOKENS_MAX", "900")))
-TICK = float(os.getenv("STUB_TICK", "0.05"))
+TICK = float(os.getenv("STUB_TICK", "0.025"))
 FAIL = float(os.getenv("STUB_FAIL_RATE", "0"))
 
 WORDS = (

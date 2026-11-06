@@ -29,6 +29,7 @@ sysctl -w net.ipv4.ip_local_port_range="1024 65535"    # connection churn runs o
 
 # target
 curl -fsSL https://get.docker.com | sh
+apt-get update && apt-get install -y python3-venv   # stock Ubuntu ships without ensurepip
 python3 -m venv /opt/pyspy && /opt/pyspy/bin/pip install py-spy   # PYSPY=/opt/pyspy/bin/py-spy
 ufw allow OpenSSH && ufw allow from <loader-ip> to any port 8000 && ufw enable
 ```
