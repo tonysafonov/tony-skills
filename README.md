@@ -110,10 +110,10 @@ Mini App framework) and a production Mini App built on it. On Arjay's multicore 
 
 | Users held 5 min | first round | re-run on the fixed core, same day as its reference |
 |---|---:|---:|
-| plain FastAPI reference (`examples/python`) | 3,400 | 3,000–3,100 |
+| plain FastAPI reference (`examples/python`, one worker per core = 2) | 3,400 | 3,000–3,100 |
 | gramkit as first shipped (1 worker) | 220 | — |
 | gramkit with the fixes, 1 worker (template default) | — | 710 |
-| gramkit with the fixes, 2 workers (one per core) | 1,400 | 1,300 |
+| gramkit with the fixes, 2 workers (one per core, like the reference) | 1,400 | 1,300 |
 
 The fixes: per-process clients, a bounded DB pool, pure-ASGI middleware, real core dependencies instead of
 `dependency_overrides`, off-loop log writes. Only same-day numbers compare: the unchanged reference drifted ~10 %
